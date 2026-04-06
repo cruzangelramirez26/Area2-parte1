@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mapa + Quiz — Área 2 · EGEL Plus</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0c10;--card:#12151e;--card2:#181c28;--border:#1e2436;--text:#c8cdd8;--text2:#7c8494;--white:#e8ecf4;--green:#22c55e;--green2:#15803d;--greenBg:rgba(34,197,94,.08);--red:#ef4444;--red2:#b91c1c;--redBg:rgba(239,68,68,.08);--blue:#3b82f6;--amber:#f59e0b;--amberBg:rgba(245,158,11,.08);--purple:#a78bfa;--cyan:#06b6d4;--orange:#f97316;--teal:#14b8a6}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;min-height:100vh}
+::selection{background:var(--teal);color:#fff}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#2a3040;border-radius:3px}
+.shell{max-width:900px;margin:0 auto;padding:16px 14px 60px}
+.hdr{background:linear-gradient(135deg,#111422,#141e2e 50%,#121a2a);border:1px solid var(--border);border-radius:16px;padding:28px 24px;margin-bottom:20px;position:relative;overflow:hidden}
+.hdr::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(20,184,166,.07),transparent 70%);pointer-events:none}
+.hdr .tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2.5px;color:var(--text2);margin-bottom:6px;text-transform:uppercase}
+.hdr h1{font-size:21px;font-weight:700;color:var(--white);margin-bottom:4px}
+.hdr p{font-size:13px;color:var(--text2)}
+.main-tabs{display:flex;gap:5px;margin-bottom:16px}
+.main-tab{padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.main-tab.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.main-tab:hover:not(.active){border-color:#3b4a6a;color:var(--white)}
+
+/* ── DIAGRAM ── */
+.diagram{display:flex;flex-direction:column;gap:8px}
+.d-node{border-radius:12px;border:1px solid var(--border);overflow:hidden;transition:all .2s}
+.d-node-head{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;transition:background .2s}
+.d-node-head:hover{background:rgba(255,255,255,.03)}
+.d-node-icon{font-size:18px;min-width:28px;text-align:center}
+.d-node-title{font-size:15px;font-weight:700;color:var(--white)}
+.d-node-sub{font-size:12px;color:var(--text2);margin-left:auto}
+.d-node-arrow{font-size:12px;color:var(--text2);transition:transform .25s;margin-left:8px}
+.d-node.open .d-node-arrow{transform:rotate(90deg)}
+.d-node-body{display:none;padding:0 18px 16px;animation:fadeUp .2s ease both}
+.d-node.open .d-node-body{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* node colors */
+.d-node.arch .d-node-head{background:rgba(59,130,246,.06)}
+.d-node.arch{border-color:rgba(59,130,246,.2)}
+.d-node.arch .d-node-title{color:#93c5fd}
+.d-node.quality .d-node-head{background:rgba(245,158,11,.05)}
+.d-node.quality{border-color:rgba(245,158,11,.18)}
+.d-node.quality .d-node-title{color:#fcd34d}
+.d-node.kruchten .d-node-head{background:rgba(167,139,250,.05)}
+.d-node.kruchten{border-color:rgba(167,139,250,.18)}
+.d-node.kruchten .d-node-title{color:#c4b5fd}
+.d-node.solid .d-node-head{background:rgba(20,184,166,.05)}
+.d-node.solid{border-color:rgba(20,184,166,.18)}
+.d-node.solid .d-node-title{color:#5eead4}
+.d-node.gof .d-node-head{background:rgba(249,115,22,.05)}
+.d-node.gof{border-color:rgba(249,115,22,.18)}
+.d-node.gof .d-node-title{color:#fdba74}
+
+.d-connector{display:flex;align-items:center;gap:8px;padding:2px 22px}
+.d-connector-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.d-connector-txt{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:1px}
+
+/* children inside nodes */
+.d-children{display:grid;gap:6px;margin-top:10px}
+.d-child{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;transition:all .2s;overflow:hidden}
+.d-child:hover{border-color:#3b4a6a}
+.d-child-head{display:flex;align-items:center;gap:8px}
+.d-child-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.d-child-name{font-size:13px;font-weight:600;color:var(--white)}
+.d-child-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-left:auto}
+.d-child-arrow{font-size:11px;color:var(--text2);transition:transform .2s}
+.d-child.open .d-child-arrow{transform:rotate(90deg)}
+.d-child-body{display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text);line-height:1.7}
+.d-child.open .d-child-body{display:block}
+.d-child-body strong{color:var(--white)}
+.d-child-body .ex{background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.1);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:12px}
+.d-child-body .ex strong{color:var(--teal)}
+
+.placeholder{background:rgba(255,255,255,.02);border:1px dashed var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);font-style:italic;text-align:center;margin-top:6px}
+
+/* GoF subcats */
+.gof-cats{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.gof-cat{border-radius:9px;overflow:hidden;border:1px solid var(--border)}
+.gof-cat-head{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:rgba(255,255,255,.02)}
+.gof-cat-head:hover{background:rgba(255,255,255,.04)}
+.gof-cat-name{font-size:13px;font-weight:600;color:var(--white)}
+.gof-cat-arrow{font-size:11px;color:var(--text2);margin-left:auto;transition:transform .2s}
+.gof-cat.open .gof-cat-arrow{transform:rotate(90deg)}
+.gof-cat-body{display:none;padding:8px 14px 12px}
+.gof-cat.open .gof-cat-body{display:block}
+
+/* ── QUIZ ── */
+.pbar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.pbar .track{flex:1;height:6px;background:#1a1f2e;border-radius:3px;overflow:hidden}
+.pbar .fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--blue));border-radius:3px;transition:width .4s ease}
+.pbar .label{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);white-space:nowrap}
+.qcard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:14px;animation:fadeUp .35s ease both}
+.qnum{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--teal);margin-bottom:8px}
+.qtxt{font-size:15px;color:var(--white);font-weight:500;line-height:1.7;margin-bottom:6px;white-space:pre-line}
+.qtag{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:5px;margin-bottom:12px;text-transform:uppercase}
+.qtag.arch{background:rgba(59,130,246,.1);color:#93c5fd}
+.qtag.quality{background:rgba(245,158,11,.1);color:#fcd34d}
+.qtag.kruchten{background:rgba(167,139,250,.1);color:#c4b5fd}
+.qtag.solid{background:rgba(20,184,166,.1);color:#5eead4}
+.qtag.gof{background:rgba(249,115,22,.1);color:#fdba74}
+.opts{display:grid;gap:8px}
+.opt{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--text);cursor:pointer;transition:all .2s;text-align:left;font-family:'DM Sans',sans-serif;line-height:1.6;display:flex;align-items:flex-start;gap:10px}
+.opt:hover:not(.locked){border-color:#3b4a6a;background:#1a1f30}
+.opt .letter{font-family:'DM Mono',monospace;font-weight:600;font-size:13px;color:var(--text2);min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.04);flex-shrink:0;margin-top:1px}
+.opt.correct{border-color:var(--green2);background:var(--greenBg)}.opt.correct .letter{background:var(--green);color:#fff}
+.opt.wrong{border-color:var(--red2);background:var(--redBg)}.opt.wrong .letter{background:var(--red);color:#fff}
+.opt.locked{cursor:default;opacity:.7}.opt.correct.locked{opacity:1}.opt.dimmed{opacity:.45}
+.fb{margin-top:14px;padding:16px;border-radius:10px;animation:fadeUp .3s ease both;font-size:13.5px;line-height:1.75}
+.fb.ok{background:var(--greenBg);border:1px solid rgba(34,197,94,.15)}.fb.ok .fb-tag{color:var(--green)}
+.fb.no{background:var(--redBg);border:1px solid rgba(239,68,68,.15)}.fb.no .fb-tag{color:var(--red)}
+.fb-tag{font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:'DM Mono',monospace}
+.fb-text{color:var(--text)}.fb-ref{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-top:8px}
+.fb-trap{margin-top:10px;padding:10px 12px;background:var(--amberBg);border:1px solid rgba(245,158,11,.12);border-radius:8px}
+.fb-trap .trap-tag{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--amber);font-weight:600;margin-bottom:4px}
+.fb-trap p{font-size:12.5px;color:var(--text);line-height:1.6}
+.nav{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{padding:10px 20px;border-radius:9px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{background:#0d9488}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-ghost:hover{border-color:#3b4a6a;color:var(--white)}
+.results{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;animation:fadeUp .4s ease both}
+.results h2{font-size:20px;color:var(--white);margin-bottom:16px}
+.score-big{font-family:'DM Mono',monospace;font-size:48px;font-weight:700;margin-bottom:4px}
+.score-ok{color:var(--green)}.score-mid{color:var(--amber)}.score-bad{color:var(--red)}
+.cat-scores{display:grid;gap:6px;margin:16px 0}
+.cat-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.cat-row .cat-name{min-width:160px;color:var(--text2)}
+.cat-row .cat-track{flex:1;height:5px;background:#1a1f2e;border-radius:3px;overflow:hidden}
+.cat-row .cat-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.cat-row .cat-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);min-width:36px;text-align:right}
+</style>
+</head>
+<body>
+<div class="shell" id="app"></div>
+<script>
+// ══════════════════════════════════════════════
+// DATA — DIAGRAM
+// ══════════════════════════════════════════════
+const diagramData = [
+  {
+    id:'arch', cls:'arch', icon:'🏗️', title:'Estilos Arquitectónicos',
+    sub:'Subárea 2.1 — Cómo estructuras el sistema',
+    desc:'Decisiones de alto nivel sobre cómo dividir y organizar el sistema.',
+    children:[
+      { dot:'#93c5fd', name:'MVC', tag:'Modelo-Vista-Controlador',
+        body:`<strong>¿Qué es?</strong> Separa Modelo (datos), Vista (UI) y Controlador (flujo).<br><br>
+<strong>Clave:</strong> La Vista observa al Modelo directamente. El Controlador no conoce HTML.<br>
+<div class="ex"><strong>Ej:</strong> Django, Ruby on Rails — apps web donde la vista se actualiza cuando cambian los datos.</div>` },
+      { dot:'#93c5fd', name:'MVP', tag:'Model-View-Presenter',
+        body:`<strong>¿Qué es?</strong> El Presenter es intermediario total. La Vista es completamente pasiva ("dumb view").<br><br>
+<strong>Clave:</strong> La Vista NO conoce al Modelo. Solo el Presenter le dice qué mostrar.<br>
+<div class="ex"><strong>Ej:</strong> Android tradicional — Activity solo muestra lo que el Presenter le indica.</div>` },
+      { dot:'#93c5fd', name:'Arquitectura en Capas', tag:'Layered',
+        body:`<strong>¿Qué es?</strong> Divide el sistema en niveles: presentación → negocio → datos.<br><br>
+<strong>Clave:</strong> Cada capa solo conoce a la inmediatamente inferior. Nunca salta capas.<br>
+<div class="ex"><strong>Ej:</strong> Aplicación bancaria — UI llama a servicios, servicios llaman a repositorios, repositorios a BD.</div>` },
+      { dot:'#93c5fd', name:'Microservicios', tag:'Microservices',
+        body:`<strong>¿Qué es?</strong> Sistema dividido en servicios pequeños, independientes, cada uno con su propia BD.<br><br>
+<strong>Clave:</strong> Se comunican por API/eventos. Cada servicio se despliega por separado.<br>
+<div class="ex"><strong>Ej:</strong> Netflix — servicio de recomendaciones, servicio de pagos, servicio de streaming, todos independientes.</div>` },
+    ]
+  },
+  {
+    id:'quality', cls:'quality', icon:'⚡', title:'Atributos de Calidad',
+    sub:'Requisitos no funcionales del sistema',
+    desc:'Propiedades que el sistema debe cumplir. Justifican las decisiones arquitectónicas.',
+    children:[
+      { dot:'#fcd34d', name:'Performance', tag:'Rendimiento',
+        body:`Qué tan rápido responde el sistema bajo carga. <br><strong>Táctica:</strong> caché, balanceo de carga, lazy loading.` },
+      { dot:'#fcd34d', name:'Disponibilidad', tag:'Availability',
+        body:`Fracción de tiempo que el sistema está operativo. <br><strong>Táctica:</strong> redundancia, failover, health checks.` },
+      { dot:'#fcd34d', name:'Seguridad', tag:'Security',
+        body:`Protección contra accesos no autorizados. <br><strong>Táctica:</strong> autenticación, cifrado, auditoría.` },
+      { dot:'#fcd34d', name:'Mantenibilidad', tag:'Maintainability',
+        body:`Facilidad para modificar el sistema sin romper cosas. <br><strong>Relación:</strong> directamente ligado a SOLID y bajo acoplamiento.` },
+      { dot:'#fcd34d', name:'Escalabilidad', tag:'Scalability',
+        body:`Capacidad de crecer sin rediseño. <br><strong>Tipos:</strong> vertical (más hardware) y horizontal (más nodos).` },
+      { dot:'#fcd34d', name:'Testabilidad', tag:'Testability',
+        body:`Facilidad para verificar que el sistema funciona correctamente. <br><strong>Relación:</strong> componentes desacoplados son más testables.` },
+      { dot:'#fcd34d', name:'Interoperabilidad', tag:'Interoperability',
+        body:`Capacidad de integrarse con otros sistemas. <br><strong>Táctica:</strong> APIs estándar, formatos abiertos (JSON, XML).` },
+    ]
+  },
+  {
+    id:'kruchten', cls:'kruchten', icon:'📐', title:'Modelo 4+1 de Kruchten',
+    sub:'Cómo documentas la arquitectura',
+    desc:'5 vistas para explicar la arquitectura a diferentes stakeholders. No es un estilo arquitectónico.',
+    children:[
+      { dot:'#c4b5fd', name:'Vista Lógica', tag:'Clases / objetos',
+        body:`Estructura estática del sistema: clases, interfaces, paquetes.<br><strong>Stakeholder:</strong> Analistas y diseñadores.<br><strong>Diagrama UML:</strong> Clases, objetos.` },
+      { dot:'#c4b5fd', name:'Vista de Proceso', tag:'Hilos / concurrencia',
+        body:`Comportamiento dinámico: procesos, hilos, comunicación.<br><strong>Stakeholder:</strong> Integradores de sistemas.<br><strong>Diagrama UML:</strong> Actividad, secuencia.` },
+      { dot:'#c4b5fd', name:'Vista de Desarrollo', tag:'Módulos / paquetes',
+        body:`Organización del código fuente: módulos, librerías, subsistemas.<br><strong>Stakeholder:</strong> Programadores.<br><strong>Diagrama UML:</strong> Componentes, paquetes.` },
+      { dot:'#c4b5fd', name:'Vista Física', tag:'Deployment',
+        body:`Distribución del sistema en hardware: servidores, redes, nodos.<br><strong>Stakeholder:</strong> Ingenieros de infraestructura.<br><strong>Diagrama UML:</strong> Despliegue.` },
+      { dot:'#c4b5fd', name:'+ Escenarios', tag:'Casos de uso',
+        body:`La vista "+1": casos de uso que validan y conectan las otras 4 vistas.<br><strong>Stakeholder:</strong> Todos los stakeholders.<br><strong>Diagrama UML:</strong> Casos de uso.` },
+    ]
+  },
+  {
+    id:'solid', cls:'solid', icon:'🔧', title:'Principios SOLID',
+    sub:'Cómo diseñas clases y componentes',
+    desc:'5 principios de diseño orientado a objetos. Operan dentro de cualquier arquitectura.',
+    children:[
+      { dot:'#5eead4', name:'S — Single Responsibility', tag:'SRP',
+        body:`<strong>Una clase = una sola razón para cambiar.</strong><br><br>
+Si Marketing puede pedirte cambiar la clase Y también el DBA, esa clase tiene demasiadas responsabilidades.<br>
+<div class="ex"><strong>Violación:</strong> GestorUsuarios con registrar(), enviarEmail(), generarToken(), guardarEnBD().<br><strong>Fix:</strong> Separa en UsuarioService, EmailService, TokenService.</div>` },
+      { dot:'#5eead4', name:'O — Open/Closed', tag:'OCP',
+        body:`<strong>Abierta para extender, cerrada para modificar.</strong><br><br>
+Debes poder agregar nuevo comportamiento sin tocar el código existente.<br>
+<div class="ex"><strong>Violación:</strong> if tipo=="pdf" ... else if tipo=="excel" en el mismo método.<br><strong>Fix:</strong> Interfaz Exportable que cada formato implementa.</div>` },
+      { dot:'#5eead4', name:'L — Liskov Substitution', tag:'LSP',
+        body:`<strong>Una subclase debe poder reemplazar a su padre sin romper nada.</strong><br><br>
+Si la hija lanza excepciones que el padre no lanza, o restringe comportamiento → viola LSP.<br>
+<div class="ex"><strong>Violación:</strong> CuentaMenorDeEdad extends CuentaBancaria lanza excepción en retirar().<br><strong>Fix:</strong> No heredes si el comportamiento es fundamentalmente diferente.</div>` },
+      { dot:'#5eead4', name:'I — Interface Segregation', tag:'ISP',
+        body:`<strong>Mejor varias interfaces pequeñas que una gigante.</strong><br><br>
+No obligues a una clase a implementar métodos que no va a usar.<br>
+<div class="ex"><strong>Violación:</strong> Interfaz Animal con volar(), nadar(), correr() — el Perro implementa volar() vacío.<br><strong>Fix:</strong> Interfaces Volador, Nadador, Corredor separadas.</div>` },
+      { dot:'#5eead4', name:'D — Dependency Inversion', tag:'DIP',
+        body:`<strong>Depende de abstracciones, no de implementaciones concretas.</strong><br><br>
+Módulos de alto nivel no deben depender de módulos de bajo nivel. Ambos dependen de abstracciones.<br>
+<div class="ex"><strong>Violación:</strong> Notificador crea EmailService directamente con new.<br><strong>Fix:</strong> Notificador recibe un Mensajero (interfaz) por constructor. EmailService, SMSService, etc. implementan Mensajero.</div>` },
+    ]
+  },
+  {
+    id:'gof', cls:'gof', icon:'♟️', title:'Patrones GoF',
+    sub:'Recetas probadas para problemas comunes',
+    desc:'23 patrones en 3 categorías. SOLID dice los principios — GoF da las recetas concretas.',
+    isGof: true
+  }
+];
+
+const gofData = {
+  creacionales: {
+    color:'#fdba74', colorBg:'rgba(249,115,22,.08)',
+    label:'Creacionales — cómo fabricar objetos',
+    items:[
+      { name:'Singleton', body:`<strong>Solo existe UNA instancia en todo el sistema.</strong><br>El constructor es privado. Se accede por getInstance().<br><div class="ex"><strong>Ej:</strong> Conexión a BD, logger global, configuración de la app.</div>` },
+      { name:'Factory Method', body:`<strong>Una fábrica decide qué clase concreta crear.</strong><br>Tu código solo habla con la interfaz, nunca con el concreto.<br><div class="ex"><strong>Ej:</strong> FabricaPagos.crear("paypal") → regresa PagoPayPal sin que el cliente lo sepa.</div>` },
+      { name:'Abstract Factory', body:`<strong>Una fábrica que crea familias de objetos coordinados.</strong><br>Garantiza que todos los objetos sean compatibles entre sí.<br><div class="ex"><strong>Ej:</strong> TemaOscuro crea BotonOscuro + VentanaOscura + MenuOscuro, todos coordinados.</div>` },
+      { name:'Builder', body:`<strong>Construye objetos complejos paso a paso.</strong><br>Evita constructores con 10 parámetros. Cada paso es opcional.<br><div class="ex"><strong>Ej:</strong> PizzaBuilder.tamanio("grande").masa("delgada").ingrediente("champiñones").build()</div>` },
+      { name:'Prototype', body:`<strong>Crea nuevos objetos clonando uno existente.</strong><br>El objeto se clona a sí mismo (tiene acceso a sus privados).<br><div class="ex"><strong>Ej:</strong> Editor gráfico — copiar y pegar una figura con todos sus atributos internos.</div>` },
+    ]
+  },
+  estructurales: {
+    color:'#93c5fd', colorBg:'rgba(59,130,246,.06)',
+    label:'Estructurales — cómo ensamblar clases',
+    items:null // próximamente
+  },
+  comportamiento: {
+    color:'#c4b5fd', colorBg:'rgba(167,139,250,.06)',
+    label:'Comportamiento — cómo coordinar acciones',
+    items:null // próximamente
+  }
+};
+
+// ══════════════════════════════════════════════
+// DATA — QUIZ
+// ══════════════════════════════════════════════
+const questions = [
+  // ── ESTILOS ARQUITECTÓNICOS (3) ──
+  // Q1: correcta = B (índice 1)
+  {
+    cat:'arch', catLabel:'Estilos Arquitectónicos',
+    q:`Un equipo desarrolla una app web con Django. El diseñador de UX modifica las plantillas HTML y el DBA cambia las consultas a la BD. Ninguno toca el código del otro. Sin embargo, cuando el DBA agrega una nueva columna, la vista se actualiza sola sin que el diseñador haga nada.\n\n¿Qué característica del patrón arquitectónico explica ese comportamiento automático?`,
+    opts:['El Controlador notifica a la Vista tras cada cambio','La Vista observa al Modelo directamente','El Presenter actualiza la Vista explícitamente','La Vista llama al Controlador al detectar cambios'],
+    ans:1,
+    exp:`En MVC la Vista tiene una relación directa de observación con el Modelo. Cuando el Modelo cambia, la Vista se actualiza sola sin que el Controlador intervenga.`,
+    trap:`La trampa es confundir con MVP. En MVP el Presenter actualiza la Vista explícitamente. En MVC la Vista es activa y se actualiza sola al observar al Modelo.`
+  },
+  // Q2: correcta = C (índice 2)
+  {
+    cat:'arch', catLabel:'Estilos Arquitectónicos',
+    q:`Un sistema bancario tiene tres módulos: interfaz web, lógica de transferencias y acceso a BD. La interfaz web llama al módulo de lógica, que a su vez llama a la BD. Intentas que la interfaz llame directamente a la BD para optimizar velocidad — el arquitecto lo rechaza.\n\n¿Qué principio de la Arquitectura en Capas justifica ese rechazo?`,
+    opts:['Las capas no pueden compartir interfaces entre sí','La capa de BD no puede recibir llamadas externas directas','Cada capa solo conoce a la inmediatamente inferior','Las capas deben comunicarse por eventos asíncronos'],
+    ans:2,
+    exp:`En Arquitectura en Capas cada capa solo conoce y llama a la capa inmediatamente inferior. Saltarse capas viola el principio de separación y crea acoplamiento directo entre capas que no deben conocerse.`,
+    trap:`La trampa es pensar que la restricción es de seguridad (la BD no puede recibir llamadas). La razón real es arquitectónica: el principio de "solo conoce a la capa inferior inmediata".`
+  },
+  // Q3: correcta = D (índice 3)
+  {
+    cat:'arch', catLabel:'Estilos Arquitectónicos',
+    q:`Una plataforma de e-commerce tiene módulos independientes: catálogo, carrito, pagos y envíos. Cada uno tiene su propia base de datos. Cuando se actualiza el módulo de pagos para soportar criptomonedas, los demás módulos no requieren cambio ni redeploy.\n\n¿Qué característica de Microservicios explica este comportamiento?`,
+    opts:['Los servicios comparten una BD central optimizada','Los servicios se comunican solo por memoria compartida','Cada servicio usa el mismo framework de desarrollo','Cada servicio se despliega de forma completamente independiente'],
+    ans:3,
+    exp:`En Microservicios cada servicio es independiente y se despliega por separado. Esto permite actualizar un servicio sin afectar ni redesplegar los demás, siempre que la interfaz (API) se mantenga compatible.`,
+    trap:`La trampa es confundir con los beneficios de una BD compartida. Precisamente lo opuesto es verdad: cada microservicio tiene su propia BD para garantizar independencia total.`
+  },
+  // ── ATRIBUTOS DE CALIDAD (5) ──
+  // Q4: correcta = A (índice 0)
+  {
+    cat:'quality', catLabel:'Atributos de Calidad',
+    q:`Durante el diseño de un sistema de streaming, el arquitecto decide replicar el servicio en 5 nodos y agregar un load balancer. Si un nodo cae, el tráfico se redirige a los demás automáticamente y los usuarios no notan interrupciones.\n\n¿Qué atributo de calidad está priorizando principalmente esta decisión?`,
+    opts:['Disponibilidad del sistema ante fallos','Escalabilidad horizontal bajo carga','Performance de respuesta por usuario','Interoperabilidad entre nodos del clúster'],
+    ans:0,
+    exp:`Disponibilidad es la fracción de tiempo que el sistema está operativo. Las tácticas de redundancia y failover automático son las tácticas clásicas para lograr alta disponibilidad.`,
+    trap:`La trampa es confundir con Escalabilidad. Agregar nodos puede ser escalabilidad horizontal, pero el objetivo aquí es que el sistema siga funcionando aunque fallen nodos — eso es Disponibilidad.`
+  },
+  // Q5: correcta = C (índice 2)
+  {
+    cat:'quality', catLabel:'Atributos de Calidad',
+    q:`El equipo de QA reporta que al modificar el módulo de autenticación, las pruebas unitarias tardan 3 días en escribirse porque el módulo depende directamente de la BD, del servicio de email y del logger. Es imposible probar una parte sin tener todas las dependencias activas.\n\n¿Qué atributo de calidad está en riesgo y qué principio SOLID lo causó?`,
+    opts:['Disponibilidad, violación de SRP','Seguridad, violación de ISP','Testabilidad, violación de DIP','Performance, violación de OCP'],
+    ans:2,
+    exp:`Testabilidad es la facilidad para verificar el sistema. Cuando un módulo depende de implementaciones concretas (BD real, email real), no se puede probar aislado. DIP dice que debes depender de abstracciones — eso precisamente permite inyectar mocks en los tests.`,
+    trap:`La trampa es pensar en Mantenibilidad. Aunque están relacionados, el problema específico descrito es sobre dificultad de testing — eso es Testabilidad. Y la causa es DIP: dependencia de concretos.`
+  },
+  // Q6: correcta = B (índice 1)
+  {
+    cat:'quality', catLabel:'Atributos de Calidad',
+    q:`Un sistema de reportes genera PDFs en 45 segundos bajo carga normal. En temporada alta con 10x el tráfico habitual, los tiempos suben a 8 minutos y los usuarios abandonan. El arquitecto propone agregar más servidores sin cambiar el código.\n\n¿Qué dos atributos de calidad están en tensión aquí y cuál se está sacrificando?`,
+    opts:['Disponibilidad vs Seguridad — se sacrifica Seguridad','Performance vs Escalabilidad — se sacrifica Performance','Mantenibilidad vs Performance — se sacrifica Mantenibilidad','Testabilidad vs Interoperabilidad — se sacrifica Testabilidad'],
+    ans:1,
+    exp:`El sistema tiene un problema de Performance (responde lento) que se intenta resolver con Escalabilidad horizontal (más servidores). En la temporada alta se sacrifica Performance al no poder procesar a tiempo, aunque se intenta compensar con escalabilidad.`,
+    trap:`La trampa es confundir Performance con Disponibilidad. El sistema no está "caído" — sigue respondiendo, solo lento. Eso es Performance degradado, no falta de disponibilidad.`
+  },
+  // Q7: correcta = D (índice 3)
+  {
+    cat:'quality', catLabel:'Atributos de Calidad',
+    q:`Una empresa adquiere un sistema legacy que almacena datos en un formato propietario. Para integrarlo con sus sistemas modernos (que usan REST/JSON), deben desarrollar un módulo traductor costoso. El CTO dice que el sistema original "no fue diseñado pensando en otros sistemas".\n\n¿Qué atributo de calidad fue ignorado en el diseño original?`,
+    opts:['Mantenibilidad para modificar el formato','Disponibilidad del servicio de datos','Escalabilidad del volumen de datos','Interoperabilidad con sistemas externos'],
+    ans:3,
+    exp:`Interoperabilidad es la capacidad de integrarse con otros sistemas usando estándares abiertos. Si el sistema original hubiera usado APIs estándar y formatos abiertos, la integración sería trivial.`,
+    trap:`La trampa es elegir Mantenibilidad. Aunque el sistema es difícil de modificar, el problema específico es sobre integración con sistemas externos — eso es Interoperabilidad.`
+  },
+  // Q8: correcta = B (índice 1)
+  {
+    cat:'quality', catLabel:'Atributos de Calidad',
+    q:`Los atributos de calidad frecuentemente generan trade-offs. Un sistema bancario que prioriza máxima Seguridad (múltiples capas de autenticación, cifrado de todo, auditoría exhaustiva) reporta tiempos de respuesta de 3 segundos por operación.\n\n¿Qué describe correctamente esta situación?`,
+    opts:['Violación de Disponibilidad por exceso de controles','Trade-off entre Seguridad y Performance','Falta de Escalabilidad horizontal adecuada','Problema de Interoperabilidad con sistemas externos'],
+    ans:1,
+    exp:`Los atributos de calidad frecuentemente entran en tensión (trade-off). Maximizar Seguridad con múltiples capas de control tiene un costo directo en Performance. El arquitecto debe decidir el balance adecuado para el contexto.`,
+    trap:`La trampa es pensar en Disponibilidad. El sistema sigue funcionando (está disponible), solo que responde lento. La tensión real es entre Seguridad y Performance.`
+  },
+  // ── KRUCHTEN (5) ──
+  // Q9: correcta = C (índice 2)
+  {
+    cat:'kruchten', catLabel:'Modelo 4+1 de Kruchten',
+    q:`Un arquitecto necesita mostrar al equipo de infraestructura dónde se desplegará cada componente del sistema: qué servidor ejecuta qué proceso, cómo están conectados los nodos de red y qué base de datos vive en qué máquina.\n\n¿Qué vista del Modelo 4+1 debe usar?`,
+    opts:['Vista Lógica — clases y relaciones del sistema','Vista de Desarrollo — módulos y paquetes del código','Vista Física — distribución en hardware y nodos','Vista de Proceso — hilos y comportamiento dinámico'],
+    ans:2,
+    exp:`La Vista Física (también llamada de Despliegue) muestra la distribución del software en hardware: servidores, redes, nodos. Es la vista relevante para ingenieros de infraestructura. Se representa con diagramas de despliegue UML.`,
+    trap:`La trampa es confundir con Vista de Desarrollo. La Vista de Desarrollo muestra la organización del código fuente (módulos, paquetes). La Vista Física es sobre hardware y despliegue real.`
+  },
+  // Q10: correcta = A (índice 0)
+  {
+    cat:'kruchten', catLabel:'Modelo 4+1 de Kruchten',
+    q:`Durante una revisión de arquitectura, el Product Owner pregunta: "¿Cómo sé que esta arquitectura realmente soporta el caso de uso de un usuario que hace login, busca un producto y lo compra?"\n\n¿Qué vista del Modelo 4+1 responde directamente esa pregunta y cuál es su propósito principal?`,
+    opts:['Vista de Escenarios (+1) — valida las otras vistas con casos de uso concretos','Vista Lógica — muestra las clases involucradas en el flujo','Vista de Proceso — muestra los hilos que ejecutan el caso de uso','Vista de Desarrollo — muestra los módulos que participan'],
+    ans:0,
+    exp:`La Vista de Escenarios (el "+1") es precisamente el elemento que valida y conecta las otras 4 vistas. Usa casos de uso concretos para demostrar que la arquitectura los soporta. Es relevante para todos los stakeholders.`,
+    trap:`La trampa es elegir Vista Lógica porque "muestra las clases del sistema". Aunque la Vista Lógica es útil, el "+1" existe específicamente para responder "¿esta arquitectura soporta este escenario de uso?" — esa es su razón de ser.`
+  },
+  // Q11: correcta = D (índice 3)
+  {
+    cat:'kruchten', catLabel:'Modelo 4+1 de Kruchten',
+    q:`El equipo de desarrollo se queja de que no saben cómo organizar el código fuente: en qué paquete va cada clase, qué librerías externas se usan y cuáles son las dependencias entre módulos compilables.\n\n¿Qué vista del Modelo 4+1 deben consultar?`,
+    opts:['Vista Lógica — diseño orientado a objetos','Vista de Proceso — concurrencia e hilos','Vista Física — despliegue en servidores','Vista de Desarrollo — paquetes, módulos y librerías'],
+    ans:3,
+    exp:`La Vista de Desarrollo muestra la organización del código fuente: módulos, paquetes, librerías y sus dependencias. Es la vista más relevante para los programadores en su trabajo diario. Se representa con diagramas de componentes y paquetes.`,
+    trap:`La trampa es elegir Vista Lógica. La Vista Lógica muestra clases y sus relaciones (diseño OO), pero no habla de la organización física del código en paquetes y módulos compilables — eso es Vista de Desarrollo.`
+  },
+  // Q12: correcta = B (índice 1)
+  {
+    cat:'kruchten', catLabel:'Modelo 4+1 de Kruchten',
+    q:`Un sistema de mensajería en tiempo real tiene múltiples hilos: uno que escucha conexiones entrantes, varios que procesan mensajes en paralelo y uno que gestiona reconexiones. El arquitecto quiere documentar cómo estos hilos se sincronizan y se comunican.\n\n¿Qué vista del Modelo 4+1 captura esta información?`,
+    opts:['Vista Física — nodos y conexiones de red','Vista de Proceso — hilos, concurrencia y sincronización','Vista de Desarrollo — módulos del servidor','Vista Lógica — clases del sistema de mensajería'],
+    ans:1,
+    exp:`La Vista de Proceso captura el comportamiento dinámico del sistema: procesos, hilos, su comunicación y sincronización. Es relevante para integradores que necesitan entender concurrencia y paralelismo. Se representa con diagramas de actividad y secuencia.`,
+    trap:`La trampa es elegir Vista Física porque "los hilos corren en servidores". La Vista Física es sobre hardware y nodos de red. Los hilos y su sincronización son comportamiento dinámico — eso es Vista de Proceso.`
+  },
+  // Q13: correcta = A (índice 0)
+  {
+    cat:'kruchten', catLabel:'Modelo 4+1 de Kruchten',
+    q:`Una empresa presenta su arquitectura a tres audiencias distintas el mismo día: analistas de negocio, programadores del backend e ingenieros de DevOps. El arquitecto prepara materiales distintos para cada uno aunque describen el mismo sistema.\n\n¿Qué justifica desde el Modelo 4+1 que el mismo sistema requiera múltiples representaciones?`,
+    opts:['Diferentes stakeholders tienen diferentes preocupaciones arquitectónicas','El sistema es tan complejo que no cabe en un solo diagrama','El Modelo 4+1 exige exactamente 5 documentos por norma','Cada vista usa un lenguaje de modelado diferente'],
+    ans:0,
+    exp:`El Modelo 4+1 existe precisamente porque diferentes stakeholders tienen diferentes preocupaciones: los analistas quieren la lógica de negocio (Vista Lógica), los programadores quieren la organización del código (Vista de Desarrollo), y DevOps quiere el despliegue (Vista Física). Un solo diagrama no puede satisfacer a todos.`,
+    trap:`La trampa es pensar que es por complejidad del sistema. El Modelo 4+1 aplica a sistemas simples y complejos. La razón es conceptual: distintas preguntas requieren distintas vistas, independientemente del tamaño.`
+  },
+  // ── SOLID (6) ──
+  // Q14: correcta = C (índice 2)
+  {
+    cat:'solid', catLabel:'SOLID',
+    q:`Una clase ReportManager tiene los métodos: fetchDataFromDB(), formatAsHTML(), formatAsPDF(), sendByEmail(), logActivity(). El gerente de Marketing pide cambiar el diseño HTML, el DBA pide optimizar la consulta SQL y el equipo de DevOps pide cambiar el destino del log.\n\n¿Cuántas razones para cambiar tiene esta clase y qué principio viola?`,
+    opts:['1 razón — cumple SRP porque solo gestiona reportes','2 razones — viola OCP al tener formatos fijos','4 razones — viola SRP al tener múltiples stakeholders','3 razones — viola LSP al mezclar responsabilidades'],
+    ans:2,
+    exp:`SRP dice que una clase debe tener solo UNA razón para cambiar. ReportManager tiene al menos 4: el diseño HTML (Marketing), la consulta SQL (DBA), el envío de email (infraestructura) y el logging (DevOps). Cada uno es un stakeholder diferente que puede exigir cambios independientes.`,
+    trap:`La trampa es pensar "solo hace reportes, entonces tiene una sola responsabilidad". SRP no es sobre el nombre de la clase sino sobre quién puede pedir que cambie. Cuatro stakeholders diferentes = cuatro razones para cambiar = violación de SRP.`
+  },
+  // Q15: correcta = D (índice 3)
+  {
+    cat:'solid', catLabel:'SOLID',
+    q:`Un sistema de descuentos tiene este código:\n\nif (cliente.tipo == "VIP") descuento = 0.20;\nelse if (cliente.tipo == "frecuente") descuento = 0.10;\nelse if (cliente.tipo == "nuevo") descuento = 0.05;\n\nCada vez que agregan un tipo de cliente, modifican este bloque.\n\n¿Qué principio SOLID se viola y cuál sería la dirección correcta?`,
+    opts:['SRP — separar el cálculo en una clase diferente','LSP — evitar que los tipos hereden de Cliente','DIP — inyectar el tipo de cliente por constructor','OCP — crear interfaz EstrategiaDescuento que cada tipo implemente'],
+    ans:3,
+    exp:`OCP dice que el código debe estar abierto para extensión pero cerrado para modificación. Cada nuevo tipo de cliente requiere modificar el bloque if/else existente — eso viola OCP. La solución es una interfaz EstrategiaDescuento que cada tipo implementa, permitiendo agregar tipos sin tocar el código existente.`,
+    trap:`La trampa es elegir SRP porque "el cálculo de descuentos debería estar separado". Aunque SRP también aplica, el problema específico aquí es que cada extensión requiere modificar código existente — eso es exactamente lo que OCP prohíbe.`
+  },
+  // Q16: correcta = A (índice 0)
+  {
+    cat:'solid', catLabel:'SOLID',
+    q:`Una clase Ave tiene el método volar(). PajaroCanario extends Ave y vuela correctamente. PingüinoEmperador extends Ave pero su método volar() lanza UnsupportedOperationException porque los pingüinos no vuelan.\n\nUn método que recibe Ave y llama volar() puede romperse. ¿Qué principio se viola?`,
+    opts:['LSP — PingüinoEmperador no puede sustituir a Ave sin romper el sistema','ISP — Ave tiene métodos que no todos los pájaros usan','OCP — Ave no está abierta para extensión correctamente','SRP — Ave mezcla responsabilidades de vuelo y terrestres'],
+    ans:0,
+    exp:`LSP dice que una subclase debe poder sustituir a su padre sin romper el comportamiento esperado. PingüinoEmperador hereda de Ave pero lanza excepción en volar() — cualquier código que trate un Pingüino como Ave se romperá. La herencia aquí no refleja una relación "es-un" válida en comportamiento.`,
+    trap:`La trampa es elegir ISP porque "Ave tiene métodos que no todos los pájaros usan". ISP es sobre interfaces con métodos innecesarios. LSP es sobre herencia que rompe el comportamiento esperado al sustituir padre por hijo — ese es el problema aquí.`
+  },
+  // Q17: correcta = C (índice 2)
+  {
+    cat:'solid', catLabel:'SOLID',
+    q:`Una interfaz IWorker tiene métodos: work(), eat(), sleep(), attendMeeting(), submitExpenseReport(). Una clase RobotWorker la implementa pero deja eat(), sleep() y submitExpenseReport() vacíos o lanzando excepciones porque los robots no hacen eso.\n\n¿Qué principio viola esto y cuál es la señal más clara de la violación?`,
+    opts:['SRP — IWorker tiene demasiadas responsabilidades mezcladas','DIP — RobotWorker depende de una implementación concreta','ISP — RobotWorker implementa métodos que no le aplican','LSP — RobotWorker no puede sustituir a HumanWorker'],
+    ans:2,
+    exp:`ISP dice que una clase no debe verse forzada a implementar métodos que no usa. La señal más clara es exactamente esa: métodos vacíos o que lanzan excepciones porque "no aplica". Eso indica que la interfaz es demasiado grande y debe dividirse en interfaces más específicas.`,
+    trap:`La trampa es elegir SRP porque "IWorker hace demasiado". SRP es sobre clases con múltiples razones para cambiar. ISP es específicamente sobre interfaces que obligan a implementar métodos innecesarios — esa es la diferencia clave.`
+  },
+  // Q18: correcta = B (índice 1)
+  {
+    cat:'solid', catLabel:'SOLID',
+    q:`Clase A (alto nivel): ServicioNotificacion crea new SMSProvider() en su constructor.\nClase B (bajo nivel): SMSProvider envía SMS.\n\nEl equipo quiere agregar soporte para WhatsApp y Push notifications. Para hacerlo deben modificar ServicioNotificacion.\n\n¿Qué principio viola esto y qué cambio concreto lo resolvería?`,
+    opts:['OCP — agregar métodos sendWhatsApp() y sendPush() a ServicioNotificacion','DIP — crear interfaz NotificadorChannel que todos los proveedores implementen','SRP — separar el envío de cada canal en clases distintas sin interfaz','LSP — WhatsAppProvider debe heredar de SMSProvider'],
+    ans:1,
+    exp:`DIP dice que los módulos de alto nivel (ServicioNotificacion) no deben depender de módulos de bajo nivel (SMSProvider) — ambos deben depender de abstracciones. Al crear new SMSProvider() directamente, ServicioNotificacion está amarrado al concreto. La interfaz NotificadorChannel desacopla ambos.`,
+    trap:`La trampa es elegir OCP porque "deben modificar ServicioNotificacion para agregar canales". Aunque OCP también se viola como consecuencia, la causa raíz es DIP: la dependencia directa en el concreto es lo que obliga a modificar el módulo de alto nivel.`
+  },
+  // Q19: correcta = D (índice 3)
+  {
+    cat:'solid', catLabel:'SOLID',
+    q:`Un equipo argumenta: "Nuestra clase OrderProcessor cumple SRP porque solo procesa órdenes". Sin embargo tiene métodos: validateOrder(), calculateTax(), applyDiscount(), chargePayment(), sendConfirmationEmail(), updateInventory().\n\nEl argumento del equipo, ¿es correcto o incorrecto y por qué?`,
+    opts:['Correcto — todos los métodos están relacionados con órdenes','Correcto — SRP permite múltiples métodos si son del mismo dominio','Incorrecto — viola OCP porque tiene demasiados métodos públicos','Incorrecto — tiene 6 razones para cambiar de 6 stakeholders distintos'],
+    ans:3,
+    exp:`El equipo confunde "cohesión temática" con SRP. SRP no es sobre el nombre o tema de la clase — es sobre razones para cambiar. Contabilidad puede pedir cambiar calculateTax(), Marketing puede pedir cambiar applyDiscount(), el equipo de pagos puede pedir cambiar chargePayment(). Son 6 stakeholders distintos = 6 razones para cambiar.`,
+    trap:`La trampa es el argumento "todos son del dominio de órdenes". Es la confusión más común con SRP. El criterio correcto no es el dominio sino quién puede pedir el cambio. Si múltiples personas con distintos roles pueden pedir cambios, hay múltiples responsabilidades.`
+  },
+  // ── GoF CREACIONALES (6) ──
+  // Q20: correcta = B (índice 1)
+  {
+    cat:'gof', catLabel:'GoF Creacionales',
+    q:`Un sistema de logging necesita garantizar que todos los módulos escriban al mismo archivo de log. Si cada módulo crea su propio Logger, pueden generarse condiciones de carrera y entradas duplicadas o corruptas.\n\n¿Qué patrón creacional resuelve esto y cuál es su mecanismo clave?`,
+    opts:['Factory Method — una fábrica decide qué Logger crear por módulo','Singleton — constructor privado y único punto de acceso getInstance()','Prototype — clonar el Logger inicial para cada módulo','Builder — construir el Logger con configuración por módulo'],
+    ans:1,
+    exp:`Singleton garantiza que solo exista una instancia en todo el sistema. El mecanismo clave es el constructor privado (nadie puede hacer new Logger()) y el método estático getInstance() que regresa siempre la misma instancia. Todos los módulos comparten el mismo objeto.`,
+    trap:`La trampa es elegir Factory Method porque "una fábrica decide qué Logger crear". Factory Method crearía instancias distintas para cada módulo — exactamente lo que se quiere evitar. Singleton es el único patrón que garantiza una sola instancia compartida.`
+  },
+  // Q21: correcta = C (índice 2)
+  {
+    cat:'gof', catLabel:'GoF Creacionales',
+    q:`Una app de pagos soporta PayPal, Stripe y OXXO. El código del carrito llama a procesarPago() sin saber cuál proveedor se usará — eso lo decide una clase central según la configuración del usuario. Cada proveedor tiene su propia clase con lógica distinta.\n\n¿Qué patrón creacional describe esta solución?`,
+    opts:['Abstract Factory — crea familias de objetos de pago relacionados','Builder — construye el objeto de pago paso a paso','Factory Method — clase central decide qué clase concreta instanciar','Singleton — solo existe un procesador de pagos activo'],
+    ans:2,
+    exp:`Factory Method centraliza la decisión de qué clase concreta crear. El código cliente solo conoce la interfaz Pago y llama al factory. El factory decide si crear PagoPayPal, PagoStripe o PagoOXXO. El cliente nunca usa new directamente con clases concretas.`,
+    trap:`La trampa es elegir Abstract Factory porque "maneja múltiples proveedores". Abstract Factory crea familias de objetos relacionados (ej: Botón + Ventana + Menú del mismo tema). Aquí solo se crea un tipo de objeto (el pago) con distintas implementaciones — eso es Factory Method.`
+  },
+  // Q22: correcta = A (índice 0)
+  {
+    cat:'gof', catLabel:'GoF Creacionales',
+    q:`Una app de UI soporta temas: "Material Design" y "Cupertino" (iOS). Cada tema debe producir Button, TextField, Dialog y Checkbox coordinados — si mezclas componentes de temas distintos, la interfaz se ve inconsistente.\n\n¿Qué patrón garantiza que todos los componentes de una pantalla sean del mismo tema?`,
+    opts:['Abstract Factory — fábrica por tema que produce todos los widgets coordinados','Factory Method — un método por componente que decide el estilo visual','Builder — construye cada widget con el tema como parámetro opcional','Prototype — clonar un widget base y modificar sus colores'],
+    ans:0,
+    exp:`Abstract Factory crea familias de objetos relacionados garantizando compatibilidad. MaterialThemeFactory produce MaterialButton + MaterialTextField + MaterialDialog — todos coordinados. Si cambias a CupertinoThemeFactory, todos los componentes cambian al estilo iOS. Es imposible mezclar accidentalmente.`,
+    trap:`La trampa es elegir Builder porque "construye widgets con el tema como parámetro". Builder es para un único objeto complejo con muchos pasos opcionales. Abstract Factory es para familias de objetos distintos que deben ser compatibles entre sí — esa coordinación entre tipos diferentes es su razón de ser.`
+  },
+  // Q23: correcta = D (índice 3)
+  {
+    cat:'gof', catLabel:'GoF Creacionales',
+    q:`Una API REST permite crear usuarios con campos obligatorios (nombre, email) y opcionales (teléfono, dirección, foto, bio, preferencias, notificaciones). Actualmente el constructor tiene 8 parámetros y el equipo no recuerda el orden. Los tests tienen líneas como new User("Juan", null, null, "CDMX", null, null, true, false).\n\n¿Qué patrón creacional resuelve la legibilidad y flexibilidad de esta construcción?`,
+    opts:['Factory Method — fábrica que decide cuáles campos son requeridos','Prototype — clonar un usuario base y sobreescribir campos','Abstract Factory — fábrica separada por tipo de usuario','Builder — encadena métodos nombrados para cada campo opcional'],
+    ans:3,
+    exp:`Builder resuelve exactamente el problema de constructores con muchos parámetros opcionales. User.builder("Juan","juan@email.com").telefono("55...").ciudad("CDMX").notificaciones(true).build() es legible, sin importar el orden y sin nulls innecesarios. Solo se incluyen los campos que aplican.`,
+    trap:`La trampa es elegir Factory Method porque "una fábrica decide qué campos son requeridos". Factory Method centraliza qué clase crear, no cómo construir un objeto complejo paso a paso. Builder es el único patrón diseñado específicamente para construcción flexible con muchos parámetros opcionales.`
+  },
+  // Q24 (bonus): correcta = B (índice 1) — Prototype
+  {
+    cat:'gof', catLabel:'GoF Creacionales',
+    q:`Un editor vectorial permite al usuario duplicar figuras complejas. Una figura puede tener 50 atributos: color, sombra, gradiente, transformaciones, efectos, capas anidadas. Varios atributos son privados. Crear una copia con new Figure() requeriría conocer todos los atributos internos.\n\n¿Qué patrón permite duplicar la figura sin necesidad de conocer sus detalles internos?`,
+    opts:['Builder — un builder externo reconstruye la figura atributo por atributo','Prototype — la figura se clona a sí misma con acceso a sus propios privados','Factory Method — una fábrica crea figuras con los mismos parámetros','Singleton — mantener una sola instancia de cada tipo de figura'],
+    ans:1,
+    exp:`Prototype delega la clonación al propio objeto. Como la figura tiene acceso a sus atributos privados, puede crear una copia exacta de sí misma sin exponer su interior. El cliente solo llama figura.clonar() sin conocer ningún detalle interno.`,
+    trap:`La trampa es elegir Builder porque "reconstruye atributo por atributo". Builder requiere que el cliente conozca cada atributo y lo configure manualmente — exactamente lo que se quiere evitar cuando hay atributos privados. Prototype es la solución cuando el objeto debe copiarse a sí mismo preservando su encapsulamiento.`
+  },
+  // Q25: correcta = C (índice 2) — Singleton vs global
+  {
+    cat:'gof', catLabel:'GoF Creacionales',
+    q:`Un desarrollador argumenta: "Singleton y variable global son lo mismo — ambos proveen un único punto de acceso a un objeto desde cualquier parte del código".\n\n¿Esta afirmación es correcta o incorrecta?`,
+    opts:['Correcta — ambos tienen el mismo efecto en tiempo de ejecución','Correcta — la única diferencia es sintáctica, no conceptual','Incorrecta — Singleton controla la instanciación; la variable global no garantiza unicidad','Incorrecta — Singleton solo funciona en lenguajes estrictamente orientados a objetos'],
+    ans:2,
+    exp:`La diferencia es fundamental: una variable global puede ser reasignada (alguien puede hacer globalLogger = new Logger() y crear múltiples instancias). Singleton hace el constructor privado, garantizando que sea imposible crear más de una instancia. Singleton controla la instanciación; la variable global solo controla el acceso.`,
+    trap:`La trampa es el argumento "ambos tienen un único punto de acceso". Tener un único punto de acceso no garantiza una única instancia. Con una variable global puedes tener múltiples instancias y simplemente guardar la última en la variable. Singleton impide físicamente la creación de más de una instancia.`
+  }
+];
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let view = 'diagram'; // 'diagram' | 'quiz'
+let qIndex = 0;
+let answers = Array(questions.length).fill(null);
+let locked = Array(questions.length).fill(false);
+let quizDone = false;
+
+// ══════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="hdr">
+      <div class="tag">EGEL Plus · Área 2 · Subáreas 2.1 y 2.2</div>
+      <h1>Mapa Conceptual + Quiz</h1>
+      <p>Repaso visual interactivo — Sesiones 7 al 9</p>
+    </div>
+    <div class="main-tabs">
+      <button class="main-tab ${view==='diagram'?'active':''}" onclick="setView('diagram')">🗺️ Mapa Conceptual</button>
+      <button class="main-tab ${view==='quiz'?'active':''}" onclick="setView('quiz')">📝 Quiz (${questions.length} preguntas)</button>
+    </div>
+    ${view==='diagram' ? renderDiagram() : renderQuiz()}
+  `;
+}
+
+// ── DIAGRAM ──
+function renderDiagram() {
+  return `<div class="diagram">${diagramData.map((node,i) => renderNode(node,i)).join(renderConnector())}</div>`;
+}
+
+function renderConnector() {
+  return `<div class="d-connector"><div class="d-connector-line"></div><div class="d-connector-txt">▼</div><div class="d-connector-line"></div></div>`;
+}
+
+function renderNode(node, i) {
+  const openClass = node._open ? 'open' : '';
+  if (node.isGof) return renderGofNode(node, i);
+  const childrenHtml = node.children ? node.children.map((c,j) => renderChild(c, i, j)).join('') : '';
+  return `
+    <div class="d-node ${node.cls} ${openClass}" id="node-${i}">
+      <div class="d-node-head" onclick="toggleNode(${i})">
+        <span class="d-node-icon">${node.icon}</span>
+        <div>
+          <div class="d-node-title">${node.title}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px">${node.sub}</div>
+        </div>
+        <span class="d-node-sub">${node.children ? node.children.length + ' elementos' : ''}</span>
+        <span class="d-node-arrow">▶</span>
+      </div>
+      <div class="d-node-body">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">${node.desc}</p>
+        <div class="d-children">${childrenHtml}</div>
+      </div>
+    </div>`;
+}
+
+function renderChild(c, ni, ci) {
+  return `
+    <div class="d-child ${c._open?'open':''}" id="child-${ni}-${ci}">
+      <div class="d-child-head" onclick="toggleChild(${ni},${ci})">
+        <div class="d-child-dot" style="background:${c.dot}"></div>
+        <span class="d-child-name">${c.name}</span>
+        <span class="d-child-tag">${c.tag}</span>
+        <span class="d-child-arrow">▶</span>
+      </div>
+      <div class="d-child-body">${c.body}</div>
+    </div>`;
+}
+
+function renderGofNode(node, i) {
+  const openClass = node._open ? 'open' : '';
+  const cats = Object.entries(gofData).map(([key, cat]) => {
+    const openCat = cat._open ? 'open' : '';
+    const bodyHtml = cat.items
+      ? cat.items.map((item,j) => renderGofItem(item, cat.color, key, j)).join('')
+      : `<div class="placeholder">🔜 Próximamente — Sesiones siguientes</div>`;
+    return `
+      <div class="gof-cat ${openCat}" id="gofcat-${key}">
+        <div class="gof-cat-head" onclick="toggleGofCat('${key}')">
+          <div class="d-child-dot" style="background:${cat.color}"></div>
+          <span class="gof-cat-name">${cat.label}</span>
+          <span class="gof-cat-arrow">▶</span>
+        </div>
+        <div class="gof-cat-body">
+          <div class="d-children">${bodyHtml}</div>
+        </div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="d-node ${node.cls} ${openClass}" id="node-${i}">
+      <div class="d-node-head" onclick="toggleNode(${i})">
+        <span class="d-node-icon">${node.icon}</span>
+        <div>
+          <div class="d-node-title">${node.title}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px">${node.sub}</div>
+        </div>
+        <span class="d-node-sub">3 categorías · 23 patrones</span>
+        <span class="d-node-arrow">▶</span>
+      </div>
+      <div class="d-node-body">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">${node.desc}</p>
+        <div class="gof-cats">${cats}</div>
+      </div>
+    </div>`;
+}
+
+// ── QUIZ ──
+function renderQuiz() {
+  if (quizDone) return renderResults();
+  const q = questions[qIndex];
+  const prog = ((qIndex) / questions.length * 100).toFixed(0);
+  const fbHtml = locked[qIndex] ? renderFeedback(qIndex) : '';
+  const letters = ['A','B','C','D'];
+  const optsHtml = q.opts.map((o,i) => {
+    let cls = 'opt';
+    if (locked[qIndex]) {
+      cls += ' locked';
+      if (i === q.ans) cls += ' correct';
+      else if (i === answers[qIndex] && answers[qIndex] !== q.ans) cls += ' wrong';
+      else cls += ' dimmed';
+    }
+    return `<button class="${cls}" onclick="answer(${i})">
+      <span class="letter">${letters[i]}</span><span>${o}</span>
+    </button>`;
+  }).join('');
+  return `
+    <div class="pbar">
+      <div class="track"><div class="fill" style="width:${prog}%"></div></div>
+      <span class="label">${qIndex+1} / ${questions.length}</span>
+    </div>
+    <div class="qcard">
+      <div class="qnum">PREGUNTA ${qIndex+1}</div>
+      <span class="qtag ${q.cat}">${q.catLabel}</span>
+      <div class="qtxt">${q.q}</div>
+      <div class="opts">${optsHtml}</div>
+      ${fbHtml}
+      ${locked[qIndex] ? `<div class="nav">
+        ${qIndex > 0 ? `<button class="btn btn-ghost" onclick="goQ(${qIndex-1})">← Anterior</button>` : ''}
+        ${qIndex < questions.length-1 ? `<button class="btn btn-primary" onclick="goQ(${qIndex+1})">Siguiente →</button>` : `<button class="btn btn-primary" onclick="finishQuiz()">Ver resultados</button>`}
+      </div>` : ''}
+    </div>`;
+}
+
+function renderFeedback(qi) {
+  const q = questions[qi];
+  const ok = answers[qi] === q.ans;
+  return `<div class="fb ${ok?'ok':'no'}">
+    <div class="fb-tag">${ok?'✓ CORRECTO':'✗ INCORRECTO'}</div>
+    <div class="fb-text">${q.exp}</div>
+    <div class="fb-trap">
+      <div class="trap-tag">⚠ TRAMPA</div>
+      <p>${q.trap}</p>
+    </div>
+  </div>`;
+}
+
+function renderResults() {
+  const total = questions.length;
+  const correct = answers.filter((a,i) => a === questions[i].ans).length;
+  const pct = Math.round(correct/total*100);
+  const cls = pct>=80?'score-ok':pct>=60?'score-mid':'score-bad';
+
+  // by category
+  const cats = {
+    arch:   { label:'Estilos Arquitectónicos', color:'#93c5fd' },
+    quality:{ label:'Atributos de Calidad',    color:'#fcd34d' },
+    kruchten:{ label:'Kruchten 4+1',           color:'#c4b5fd' },
+    solid:  { label:'SOLID',                   color:'#5eead4' },
+    gof:    { label:'GoF Creacionales',        color:'#fdba74' }
+  };
+  const catRows = Object.entries(cats).map(([key,cat]) => {
+    const qs = questions.filter(q => q.cat===key);
+    const c = qs.filter((q,i) => {
+      const idx = questions.indexOf(q);
+      return answers[idx] === q.ans;
+    }).length;
+    const p = Math.round(c/qs.length*100);
+    return `<div class="cat-row">
+      <span class="cat-name">${cat.label}</span>
+      <div class="cat-track"><div class="cat-fill" style="width:${p}%;background:${cat.color}"></div></div>
+      <span class="cat-val">${c}/${qs.length}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="results">
+    <h2>Resultado final</h2>
+    <div class="score-big ${cls}">${correct}/${total}</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:16px">${pct}% de respuestas correctas</div>
+    <div class="cat-scores">${catRows}</div>
+    <div class="nav" style="margin-top:20px">
+      <button class="btn btn-primary" onclick="resetQuiz()">🔄 Reintentar</button>
+      <button class="btn btn-ghost" onclick="setView('diagram')">🗺️ Ver mapa</button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// INTERACTIONS
+// ══════════════════════════════════════════════
+function setView(v) { view = v; render(); }
+
+function toggleNode(i) {
+  diagramData[i]._open = !diagramData[i]._open;
+  render();
+}
+
+function toggleChild(ni, ci) {
+  diagramData[ni].children[ci]._open = !diagramData[ni].children[ci]._open;
+  render();
+}
+
+function toggleGofCat(key) {
+  gofData[key]._open = !gofData[key]._open;
+  render();
+}
+
+function renderGofItem(item, color, catKey, j) {
+  const open = item._open ? 'open' : '';
+  return `
+    <div class="d-child ${open}" id="gofitem-${catKey}-${j}">
+      <div class="d-child-head" onclick="toggleGofItem('${catKey}',${j})">
+        <div class="d-child-dot" style="background:${color}"></div>
+        <span class="d-child-name">${item.name}</span>
+        <span class="d-child-arrow">▶</span>
+      </div>
+      <div class="d-child-body">${item.body}</div>
+    </div>`;
+}
+
+function toggleGofItem(catKey, j) {
+  gofData[catKey].items[j]._open = !gofData[catKey].items[j]._open;
+  render();
+}
+
+function answer(i) {
+  if (locked[qIndex]) return;
+  answers[qIndex] = i;
+  locked[qIndex] = true;
+  render();
+}
+
+function goQ(i) { qIndex = i; render(); }
+
+function finishQuiz() { quizDone = true; render(); }
+
+function resetQuiz() {
+  qIndex = 0;
+  answers = Array(questions.length).fill(null);
+  locked = Array(questions.length).fill(false);
+  quizDone = false;
+  render();
+}
+
+// init
+render();
+</script>
+</body>
+</html>
